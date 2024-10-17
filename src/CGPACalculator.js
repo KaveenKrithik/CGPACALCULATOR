@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import './CGPACalculator.css';
 
@@ -6,87 +5,57 @@ function CGPACalculator() {
   const [subjects, setSubjects] = useState([{ grade: '', credit: '' }]);
   const [cgpa, setCgpa] = useState(null);
 
-  const gradeToPoint = (grade) => {
-    switch (grade) {
-      case 'O': return 10;
-      case 'A+': return 9;
-      case 'A': return 8;
-      case 'B+': return 7;
-      case 'B': return 6;
-      case 'C': return 5;
-      case 'F': return 0;
-      default: return 0;
-    }
-  };
+  const gradeToPoint = (grade) => ({
+    'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'F': 0
+  }[grade] || 0);
 
-  const addSubject = () => {
-    setSubjects([...subjects, { grade: '', credit: '' }]);
-  };
+  const addSubject = () => setSubjects([...subjects, { grade: '', credit: '' }]);
 
-  const handleGradeChange = (index, event) => {
-    const newSubjects = [...subjects];
-    newSubjects[index].grade = event.target.value;
-    setSubjects(newSubjects);
-  };
-
-  const handleCreditChange = (index, event) => {
-    const newSubjects = [...subjects];
-    newSubjects[index].credit = event.target.value;
-    setSubjects(newSubjects);
+  const updateSubject = (index, field, value) => {
+    const updatedSubjects = subjects.map((subject, i) => 
+      i === index ? { ...subject, [field]: value } : subject
+    );
+    setSubjects(updatedSubjects);
   };
 
   const calculateCGPA = () => {
-    let totalPoints = 0;
-    let totalCredits = 0;
-
-    subjects.forEach(subject => {
-      const gradePoint = gradeToPoint(subject.grade);
-      const credit = parseFloat(subject.credit);
-
-      if (!isNaN(gradePoint) && !isNaN(credit)) {
-        totalPoints += gradePoint * credit;
-        totalCredits += credit;
-      }
-    });
-
-    const calculatedCGPA = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : 0;
-    setCgpa(calculatedCGPA);
+    const total = subjects.reduce((acc, { grade, credit }) => {
+      const gradePoint = gradeToPoint(grade);
+      const parsedCredit = parseFloat(credit);
+      return !isNaN(gradePoint) && !isNaN(parsedCredit)
+        ? { points: acc.points + gradePoint * parsedCredit, credits: acc.credits + parsedCredit }
+        : acc;
+    }, { points: 0, credits: 0 });
+    setCgpa(total.credits > 0 ? (total.points / total.credits).toFixed(2) : 0);
   };
 
   return (
     <div className="calculator-container">
-      <h1>CGPA CALCULATOR</h1>
-   
-
-
+      <h1>CGPA Calculator</h1>
       {subjects.map((subject, index) => (
         <div key={index} className="subject-row">
           <input
             type="number"
             placeholder="Credits"
             value={subject.credit}
-            onChange={event => handleCreditChange(index, event)}
+            onChange={(e) => updateSubject(index, 'credit', e.target.value)}
             className="input-field"
           />
           <select
             value={subject.grade}
-            onChange={event => handleGradeChange(index, event)}
+            onChange={(e) => updateSubject(index, 'grade', e.target.value)}
             className="input-field select-field"
           >
             <option value="">Grade</option>
-            <option value="O">O</option>
-            <option value="A+">A+</option>
-            <option value="A">A</option>
-            <option value="B+">B+</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="F">F</option>
+            {['O', 'A+', 'A', 'B+', 'B', 'C', 'F'].map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
           </select>
         </div>
       ))}
       <button onClick={addSubject} className="add-subject-btn">Add Subject</button>
       <button onClick={calculateCGPA} className="calculate-btn">Calculate CGPA</button>
-      {cgpa !== null && <h2 className="result">Your CGPA is: {cgpa}</h2>}
+      {cgpa && <h2 className="result">Your CGPA is: {cgpa}</h2>}
     </div>
   );
 }
